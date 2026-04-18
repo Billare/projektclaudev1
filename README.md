@@ -46,6 +46,58 @@ docker-compose up --build
 
 Open `http://127.0.0.1:5173` and click **Connect with Spotify**.
 
+## Hosting on the web (Railway)
+
+[Railway](https://railway.app) is the easiest way to host this publicly — it runs the backend, frontend, and PostgreSQL together with minimal config.
+
+### 1. Update Spotify redirect URI
+
+In the Spotify developer dashboard, add a new Redirect URI for your domain:
+```
+https://your-backend-domain.up.railway.app/auth/callback
+```
+
+### 2. Deploy PostgreSQL
+
+In Railway, create a new project and add a **PostgreSQL** plugin. Railway will provide a `DATABASE_URL` — copy it.
+
+### 3. Deploy the backend
+
+Add a new service pointed at the `backend/` folder. Set the following environment variables in Railway's dashboard:
+
+```
+SPOTIFY_CLIENT_ID=your_client_id
+SPOTIFY_CLIENT_SECRET=your_client_secret
+SPOTIFY_REDIRECT_URI=https://your-backend-domain.up.railway.app/auth/callback
+DATABASE_URL=postgresql://...  (from Railway PostgreSQL)
+FRONTEND_URL=https://your-frontend-domain.up.railway.app
+SYNC_INTERVAL_HOURS=2
+```
+
+### 4. Build and deploy the frontend
+
+The frontend needs to be built as static files and served. Update the Vite proxy in `frontend/vite.config.ts` to point to your live backend URL, then run:
+
+```bash
+cd frontend
+npm run build
+```
+
+Deploy the `frontend/dist/` folder to [Vercel](https://vercel.com) or [Netlify](https://netlify.com) (both free), or add it as another Railway service using Nginx to serve the static files.
+
+### 5. SSL & HTTPS
+
+Railway and Vercel/Netlify provision SSL certificates automatically — no extra setup needed.
+
+### Key differences from local
+
+| | Local | Web |
+|---|---|---|
+| Redirect URI | `http://127.0.0.1:8000/...` | `https://yourdomain.com/...` |
+| Frontend | Vite dev server | Built static files |
+| Secrets | `.env` file | Platform environment variables |
+| Database | Docker container | Hosted PostgreSQL |
+
 ## Development
 
 ```bash
